@@ -58,8 +58,8 @@ xx = cbind(1-x,x)
 colnames(xx)=c('x1','x2')
 ########summarize the final data
 yy = scale(yy, center = T, scale = T)
-save(yy,xx,file = paste0('sim_mgg',aaa,'.rda'))
-save.image(paste0('all_mgg',aaa,'.rda'))
+save(yy,xx,file = paste0('sim',aaa,'.rda'))
+save.image(paste0('all',aaa,'.rda'))
 ##first give the edge inclusion for four graphs
 icl <- list()
 for(i in 1:2) {
