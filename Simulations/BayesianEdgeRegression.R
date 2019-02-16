@@ -3,7 +3,7 @@ library('GIGrvg')
 ##load data from sim_mgg rda
 run.id = commandArgs(trailingOnly = T)
 run.id = as.numeric(run.id[1])
-load(paste0('sim_mgg', run.id,'.rda'))
+load(paste0('sim', run.id,'.rda'))
 x = as.numeric(xx[,2])
 ##############################################
 # a function to generate Mm
