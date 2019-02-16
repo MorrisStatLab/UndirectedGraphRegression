@@ -31,7 +31,7 @@ FPR <- function(fit, truth){ #given truth = 0, fit = 1
 ##########################################################################
 id = commandArgs(trailingOnly = T)
 id = as.character(id[1])
-load(paste0('sim_mgg',id,'.rda'))
+load(paste0('sim',id,'.rda'))
 load(paste0('icl',id,'.rda'))
 y1 = yy[xx[,2] == 0,]; y2 = yy[xx[,2] > 0,]
 # lambda1v; lambda2v
