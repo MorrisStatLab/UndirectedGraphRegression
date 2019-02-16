@@ -1,6 +1,6 @@
 args <- commandArgs(trailingOnly = TRUE)
 id <- as.character(args[1])
-load(paste0('all_mgg',id,'.rda'))
+load(paste0('all',id,'.rda'))
 load(paste0('res',id,'.rda'))
 sigmaIJ1 = t(as.matrix(res[[10010]]$sigmaIJ[1,]))
 sigmaIJ2 = t(as.matrix(res[[10010]]$sigmaIJ[2,]))
