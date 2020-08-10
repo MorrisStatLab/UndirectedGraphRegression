@@ -41,11 +41,6 @@ load('Proportion.rda')
 yy = t(hcc.pro[gene.id, ])
 xx = cbind(1 - prop, prop)
 x = as.numeric(xx[,2])
-########removing normal samples and just using tumor samples
-new.id <- which(xx[,1]!=1.0)
-yy = yy[new.id, ]
-xx = xx[new.id, ]
-x = as.numeric(xx[,2])
 ##This function is to calculate M.
 ##calculate the hyperparameter Ms (see supplementary)
 Mm <- Mout(yy, x)
