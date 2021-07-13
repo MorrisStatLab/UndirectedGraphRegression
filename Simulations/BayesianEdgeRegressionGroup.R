@@ -24,19 +24,13 @@ n1 = nrow(yy1);n2 = nrow(yy2);n3 = nrow(yy3)
 aprec1 <- (solve(cov(yy1)*(n1 - 1)/n1))
 aprec2 <- (solve(cov(yy2)*(n2 - 1)/n2))
 aprec3 <- (solve(cov(yy3)*(n3 - 1)/n3))
-
 prec1 <- (aprec1)^2
 prec2 <- (aprec2)^2
 prec3 <- (aprec3)^2
-
-#
 M1 <- (sum(sum(prec1)) - sum(diag(prec1)))/2
 M2 <- (sum(sum(prec2)) - sum(diag(prec2)))/2
 M3 <- (sum(sum(prec3)) - sum(diag(prec3)))/2
-
-#
 Mm <- c(M1, M2, M3)/(ncol(yy)*(ncol(yy) - 1)/2)
-print(Mm)
 
 ############prepare and intialize##############
 nG = ncol(yy); N = nrow(yy); nX = ncol(xx)
@@ -55,13 +49,10 @@ psiIJ = matrix(0.25, nrow = nX, ncol = nG*(nG - 1)/2)
 lambdam = rep(1, nX)
 gammaSqrm = 0.5
 #tune parameter
-sigma.lambda = rep(0.3, nX)
-#sigma.lambda[1] = 0.25 ## sigma.lamba is selected to make the acceptance ratio between 20% and 30%
-
+sigma.lambda = rep(0.3, nX) 
 niteration = 20000
 ##finish initialize
 
-start.time <- Sys.time()
 #input
 ##normal gamma to update sigma_ij, sigma_ji as a pair
 ##sigmaIJ: m* (p*(p-1))/2 matrix; precision off-diagonal element to estimate; initialization begins with 0
@@ -85,9 +76,7 @@ res <- list()
 
 #begin iteration
 for(t in 1:niteration){
-	
-#if(t%%5000 == 0) save(res, file = paste0('1res',sid,'.rda'))
-
+	print(t)
 ##begin with gibbs sampling
 #############################update sigmaIJ(i<j) for each pair (i,j) and (j,i)
 for(i in 1:(nG-1)){
@@ -95,9 +84,7 @@ for(i in 1:(nG-1)){
 #gibbs sampler from normal
 		h = idsigmaIJ[i, j]
 	  psiIJm = solve(diag(psiIJ[,h])) ## m*m matrix
-#calculate S1: which is a n*n matrix
 		S1 = diag(((yy[,j]^2)/sigmaII[i] + (yy[,i]^2)/sigmaII[j]))
-#calculate S2: which is a n*n matrix
 		idi = idsigmaIJ[i, -c(i,j)]
 		idj = idsigmaIJ[j, -c(i,j)]
 		S2 = 2*yy[,i]*yy[,j]
@@ -105,9 +92,7 @@ for(i in 1:(nG-1)){
 	  S2 = S2 + yy[,j]*tmp/sigmaII[i]
 	  tmp = diag((xx%*%sigmaIJ[,idj])%*%t(yy[,-c(i,j)]))
 		S2 = S2 + yy[,i]*tmp/sigmaII[j]
-#sampling parameter
 	  S2 = as.matrix(S2)
-	 # print(c(dim(S1), dim(xx), dim(psiIJm)))
 		Normal.var <- solve(psiIJm + t(xx)%*%S1%*%(xx))
 		Normal.mu <- -Normal.var%*%t(xx)%*%S2
 #sample
@@ -144,7 +129,6 @@ for(m in 1:nX){
 	  for(j in (i+1):nG){
 	      h = idsigmaIJ[i, j]
           gig2.chi = sigmaIJ[m,h]^2
-#print(c(gig2.chi, gig2.lambda));
           tmp = rgig(1, chi = gig2.chi, lambda = gig2.lambda, psi = gig2.psi)
 ### check precision for psi generated from gig
 		  if(tmp < .Machine$double.eps ^ 0.5) tmp = (.Machine$double.eps ^ 0.5)*2
@@ -184,16 +168,8 @@ accept_iter <- accept_iter + accept
   gammaSqrm = 1/rgamma(1, shape = e.star.gamma, rate = f.star.gamma)
 
 
-	if(t%%10 == 0) {
-		print(t); print(accept_iter)
-		print(lambdam); print(gammaSqrm);
-		#print(sigmaIJ); print(sigmaII)
-	}
 res[[t]] = list(sigmaIJ = sigmaIJ, sigmaII = sigmaII, accept = accept_iter,
                 psiIJ = psiIJ, lambdam = lambdam, gammaSqrm = gammaSqrm)
 }
-				
-end.time <- Sys.time()
-print(end.time-start.time)
 save(res, file = paste0('res',sid,'.rda' ))
 

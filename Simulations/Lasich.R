@@ -1,10 +1,27 @@
 id = commandArgs(trailingOnly = T)
 id = as.character(id[1])
-load(paste0('all',id,'.rda'))
-rm(list=setdiff(ls(), c("id", "omega.mat", "yn", "ye")))
 library(LASICH)
 library(msos)
-source('roc.R')
+EAUC <- function(Sens, Spec){
+  phi_grid <- seq(0,1,by=.05)  # for x axis of ROC curve
+  # ROC with expected sensitivity
+  ESens <- rep(NA,length(phi_grid)-1)
+  for (phi in 2:length(phi_grid)){
+    temp <- which((c(1-Spec) >= phi_grid[phi-1]) & (c(1-Spec) < phi_grid[phi]))
+    ESens[phi-1] <- mean(Sens[temp])
+  }
+  # interpolate if missing ESens value
+  if (is.na(ESens[length(ESens)])) ESens[length(ESens)] <- 1  # if missing boundary
+  for (ind in which(is.na(ESens))) {
+    low <- rev( which(!is.na(ESens[1:ind])) )[1]  # closest index that's not NaN
+    high <- (which(!is.na(ESens[(ind+1):length(ESens)]))+ind)[1] # same thing
+    slope <- (ESens[high] - ESens[low])/(phi_grid[high]+0.025 - (phi_grid[low]+0.025))
+    int <- ESens[high] - slope*(phi_grid[high]+0.025)
+    ESens[ind] <- slope*(phi_grid[ind]+0.025) + int   #replace NaN with interpolated value
+  }
+  # Calcuate "Expected AUC"
+  return(0.05*sum(ESens))
+}
 ########################################################################
 ## Input:
 ##  D: distance matrix
@@ -129,15 +146,14 @@ FPR <- function(fit, truth){ #given truth = 0, fit = 1
 ##########################################################################
 load(paste0('sim',id,'.rda'))
 load(paste0('icl',id,'.rda'))
-#y1 = yy[xx[,2] == 0,]; y2 = yy[xx[,2] > 0,]
 y1 = scale(yn, center=T, scale=T)
 y2 = scale(ye, center=T, scale=T)
 # lambda1v; lambda2v
+nG = 20
 lambda1v = seq(0.01, 50, length.out = 101)
 lambda2v = seq(0.01, 50, length.out = 101)
 bicl = c()
 lam = c()
-nG = 20
 auc1l = c(); auc2l = c();
 ###################define lSensitivity and lSpecificity matrix######################
 #fused
@@ -171,13 +187,11 @@ for(m in 1:length(lambda1v)){
   for(n in 1:length(lambda2v)){
     lambda1 = lambda1v[m] 
     lambda2 = lambda2v[n] 
-    start_time <- Sys.time()
     ff = try(lasich(Sigmas, Sigma0, Omega0, ns, CL, lambda1, lambda2, tol, rho))
     if(inherits(ff, "try-error")) next
     bicvl = jbic(ff, yy)
     bicl = c(bicl, bicvl)
     lam = rbind(lam, c(lambda1, lambda2))
-    ##############evaluate auc by fixing similarity parameter##############
     lc1 = ff$est[,,1]; lc2 = ff$est[,,2]
     l.heatmapR = matrix(0, ncol = 2, nrow = nG*(nG - 1)/2)
     h = 0 
@@ -225,7 +239,6 @@ ll <-rbind(
   )
 colnames(ll) <- c('TPR', 'FPR','AUC')
 rownames(ll) <- c('Group 1', 'Group 2')
-print(ll)
 save.image(file = paste0('lsi', id, '.rda'))
 
 

@@ -1,4 +1,3 @@
-#########simulate from our model to test MCMC
 args = commandArgs(trailingOnly = T)
 aaa = as.character(args[1])
 library(MASS)
@@ -56,30 +55,21 @@ for(i in 1:30){
   pcov[iid, jid] = tmp; pcov[jid, iid] = tmp
 }
 pcov = dan(pcov)
-Mm = (sum(sum(pcov^2)) - sum(diag(pcov^2)))/2
-Mm = Mm/(nG*(nG-1)/2); print(Mm)
 ccov = solve(pcov)
 yy1 = mvrnorm(N, mu = rep(0, nG), Sigma = ccov)
 yn = mvrnorm(Nn, mu = rep(0, nG), Sigma = ccov)
 omega.mat[[1]] = pcov
 print((sum(pcov != 0) - nG)/2/(nG*(nG-1)/2)) # sparsity
-###print test result
-edge.id1 = intersect(which(omega.mat[[1]] != 0), hh)
-edge.id2 = intersect(which(omega.mat[[2]] != 0), hh)
-print(length(intersect(edge.id1, edge.id2))/37)
-####################################################################################
 nPi <- seq(0.01, 0.99, length.out = N)
 ye = log2((2^yy1)*(1-nPi) + (2^yy2)*nPi)
 yy = rbind(yn, ye)
 x = c(rep(0, Nn), nPi)
 xx = cbind(1-x,x)
 colnames(xx)=c('x1','x2')
-########summarize the final data
 yy = scale(yy, center = T, scale = T)
-save(yy,xx, file = paste0('sim',aaa,'.rda'))
-save.image(paste0('all',aaa,'.rda'))
+save(yy,xx,yn,ye,omega.mat, file = 'sim.rda')
 
-##first give the edge inclusion for four graphs
+##give the edge inclusion for graphs
 icl <- list()
 for(i in 1:2) {
 	tmp = c()
@@ -91,5 +81,5 @@ for(i in 1:2) {
 	}
 	icl[[i]] = tmp
 }
-save(icl, file = paste0('icl',aaa,'.rda'))
+save(icl, file = 'icl.rda')
 

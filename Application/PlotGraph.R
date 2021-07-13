@@ -1,7 +1,7 @@
 library('coda')
 load('fdrm_2_2.rda')
-load('Path.rda')
-path = path[[6]]
+load('Pathway.rda')
+path = pathu
 heatmapR = pr.heatmapR; row.names(heatmapR) = 1:nrow(heatmapR)
 nG = length(path); ncount = 0
 for(m in 1:(nG-1)){
@@ -11,9 +11,7 @@ for(m in 1:(nG-1)){
   }
 }
 ug.symbol = as.character(read.table('protein_ab.name.txt', header = F)[path,1])
-#normal:1 ; tumor:2; 0.5 tumor: 3
 library(igraph)
-## prepare for a tumor graph
 tumor.igraph = heatmapR[,2]; summary(tumor.igraph)
 tumor.igraph.edge = names(tumor.igraph)
 tumor.igraph.weight = abs(tumor.igraph)
@@ -32,7 +30,6 @@ for (i in 1 : length(ug.symbol)) tumor.igraph.di1[tumor.igraph.di1 == i] = ug.sy
 tumor.igraph.di2 = graph(tumor.igraph.di1)
 tumor.igraph.un = as.undirected(tumor.igraph.di2, mode = 'each')
 
-## prepare for a normal graph
 normal.igraph = heatmapR[,1]; summary(normal.igraph)
 normal.igraph.edge = names(normal.igraph)
 normal.igraph.weight = abs(normal.igraph)
@@ -49,7 +46,6 @@ for (i in 1 : length(ug.symbol)) normal.igraph.di1[normal.igraph.di1 == i] = ug.
 normal.igraph.di2 = graph(normal.igraph.di1)
 normal.igraph.un = as.undirected(normal.igraph.di2, mode = 'each')
 
-## prepare for a 0.5 tumor (half) graph
 half.igraph = heatmapR[,3]; summary(half.igraph)
 half.igraph.edge = names(half.igraph)
 half.igraph.weight = abs(half.igraph)
@@ -67,8 +63,6 @@ half.igraph.di2 = graph(half.igraph.di1)
 half.igraph.un = as.undirected(half.igraph.di2, mode = 'each')
 ecount(tumor.igraph.un); ecount(normal.igraph.un);ecount(half.igraph.un)
 #############################################################################################################################
-#find the commone plot for tumor and normal graph and half graph
-#use another procedure for finding separate graph
 normal.igraph.edgeC = names(normal.igraph)[normal.igraph != 0]; normal.igraph.diC = c()
 for (i in 1 : length(normal.igraph.edgeC)) normal.igraph.diC = c(normal.igraph.diC, as.numeric(strsplit(normal.igraph.edgeC[i], split='_' )[[1]]))  
 for (i in 1 : length(ug.symbol)) normal.igraph.diC[normal.igraph.diC == i] = ug.symbol[i]
@@ -83,7 +77,7 @@ for (i in 1 : length(ug.symbol)) half.igraph.diC[half.igraph.diC == i] = ug.symb
 half.igraph.unC = as.undirected(graph(half.igraph.diC), mode = 'each')
 
 common.igraph.unC = graph.intersection(normal.igraph.unC, tumor.igraph.unC, half.igraph.unC, keep.all.vertices = F)
-##################################################################do the commone graph by considering the same sign###################################################################
+####################################################################################################################################
 rule = which(!is.na(normal.igraph)&(abs(normal.igraph) > 0)&
                !is.na(tumor.igraph)&(abs(tumor.igraph) > 0)&
                !is.na(half.igraph)&(abs(half.igraph) > 0)&
@@ -126,10 +120,8 @@ half.igraph.pi <- half.igraph
 half.igraph.pi.un <- half.igraph.un
 half.igraph.pi.edge <- half.igraph.edge
 
-##########finally for group union, we derive node subgroup for each node
-load('path_afp_immune.rda')
-p1 = path[[1]]; p2 = path[[3]]; p4 = path[[4]]
-path = path[[6]]
+p1 = path1; p2 = path3; p4 = path5
+path = pathu
 t1 = (path %in% p1)&(!(path %in% p2))&(!(path %in% p4))
 t2 = (!(path %in% p1))&((path %in% p2))&(!(path %in% p4))
 t3 = (!(path %in% p1))&(!(path %in% p2))&((path %in% p4))
@@ -176,7 +168,6 @@ setEdgeColorRule(cw, 'colors', color.values, colorhex, mode = 'lookup')
 node.names <- ug.symbol
 ntumor.width <- igraph::degree(tumor.igraph.unC)
 nw.min <- min(ntumor.width); nw.max <- max(ntumor.width)
-#node size from 45 to 90
 for(i in 1:length(node.names)){
   tmp = (ntumor.width[names(ntumor.width) == node.names[i]] - nw.min)/(nw.max - nw.min)*55 + 50
   if(sum(names(ntumor.width) == node.names[i]) == 0) tmp = 35
@@ -224,7 +215,6 @@ setEdgeColorRule(cw, 'colors', color.values, colorhex, mode = 'lookup')
 node.names <- ug.symbol
 nnormal.width <- igraph::degree(normal.igraph.unC)
 nw.min <- min(nnormal.width); nw.max <- max(nnormal.width)
-#node size from 45 to 90
 for(i in 1:length(node.names)){
   tmp = (nnormal.width[names(nnormal.width) == node.names[i]] - nw.min)/(nw.max - nw.min)*55 + 50
   if(sum(names(nnormal.width) == node.names[i]) == 0) tmp = 35
@@ -275,7 +265,6 @@ setEdgeColorRule(cw, 'colors', color.values, colorhex, mode = 'lookup')
 node.names <- ug.symbol
 nhalf.width <- igraph::degree(half.igraph.unC)
 nw.min <- min(nhalf.width); nw.max <- max(nhalf.width)
-#node size from 45 to 90
 for(i in 1:length(node.names)){
   tmp = (nhalf.width[names(nhalf.width) == node.names[i]] - nw.min)/(nw.max - nw.min)*55 + 50
   if(sum(names(nhalf.width) == node.names[i]) == 0) tmp = 35
@@ -322,7 +311,6 @@ setEdgeColorRule(cw, 'colors', color.values, colorhex, mode = 'lookup')
 node.names <- ug.symbol
 ncommon.width <- igraph::degree(common.igraph.unC)
 nw.min <- min(ncommon.width); nw.max <- max(ncommon.width)
-#node size from 45 to 90
 for(i in 1:length(node.names)){
   tmp = (ncommon.width[names(ncommon.width) == node.names[i]] - nw.min)/(nw.max - nw.min)*55 + 50
   if(sum(names(ncommon.width) == node.names[i]) == 0) tmp = 35

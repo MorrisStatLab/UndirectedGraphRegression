@@ -1,4 +1,4 @@
-%%%sigma_value can be chosen for any value that gives acceptance rate between 0.2 and 0.3
+%%%sigma_value is chosen for any value that gives acceptance rate between 0.2 and 0.3
 sigma_value = 0.075;
 %%%import data and calculated Mm
 addpath(genpath('./')) %%% add the current path or your running path
@@ -27,7 +27,7 @@ gammaSqrm = 0.5;
 sigma_lambda = zeros(nX,1);
 sigma_lambda(:,:) = sigma_value;
 niteration = 20000;
-res = cell(6,niteration/100);
+res = cell(6,100);
 %%finish the initialization
 for t = 1:niteration
     t

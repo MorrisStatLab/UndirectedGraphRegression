@@ -1,5 +1,5 @@
 addpath(genpath('./'))
-load('wholewn.mat');
+load('Profile.mat');
 nG = size(yy, 2);
 sigmaIJN = zeros(10000,nG*(nG-1)/2);
 sigmaIJT = zeros(10000,nG*(nG-1)/2);
@@ -8,9 +8,8 @@ psiIJT = zeros(10000,nG*(nG-1)/2);
 sigmaII = zeros(10000,nG);
 lambdam = zeros(10000,2);
 gammaSqrm = zeros(10000,1);
-Number = 200;
 accept_n = 0;
-for i = 101:Number
+for i = 101:200
     flnum = i*100;
     load(['reswn' num2str(flnum) '.mat']);
     for j = 1:100

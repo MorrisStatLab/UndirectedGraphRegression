@@ -1,11 +1,7 @@
 args = commandArgs(trailingOnly = T)
 library('coda')
 library(xtable)
-load('path.rda')
-pathu = path[[6]]
-path1 = path[[1]];
-path3 = path[[3]];
-path5 = path[[4]]; 
+load('Pathway.rda')
 
 id1 = which((pathu %in% path1) & !(pathu %in% path3) & !(pathu %in% path5))
 id3 = which((pathu %in% path3) & !(pathu %in% path1) & !(pathu %in% path5))
@@ -13,8 +9,7 @@ id5 = which((pathu %in% path5) & !(pathu %in% path1) & !(pathu %in% path3))
 id13 = which((pathu %in% path1) & (pathu %in% path3))
 id35 = which((pathu %in% path3) & (pathu %in% path5))
 
-load('post_2_8_m.rda')
-## protein number
+load('postm.rda')
 nG = ncol(sigmaII) 
 ##load the data from result
 lc <<- 1000
@@ -25,14 +20,11 @@ thresh <<- sl2[as.numeric(as.character(args[1]))]
 #function for local fdr
 pur = seq(0, 1, by = 0.05)
 lfdrf <- function(x) return(sum(abs(x) <= thresh)/lc) #just calculate the probability that below thresh
-##set up a matrix to store everything
 LL = length(pur)
 rhomn <- matrix(0, ncol = (nG-1)*nG/2, nrow = 2+LL)
+
 pr.heatmapR <- matrix(0, nrow = (nG-1)*nG/2, ncol = LL) #posterior mean
-#set the differential
-#####first calculate the rho of edge from sigmaij
 ncount = 0
-##############################################
 for(m in 1:(nG-1)){
   for(n in (m+1):nG){
     ncount = ncount + 1
@@ -75,7 +67,6 @@ for(m in 1:(nG-1)){
 
 
 res = matrix(0, nrow = 6, ncol = LL)
-#1,2,3;1,2,3
 llc = c(11,12,13,22,23,33)
 #take an iteration to count the edges within/cross subpathways for all different purity
 for(l in 1:LL){
@@ -125,11 +116,9 @@ rest = as.matrix(rest)
 
 library(gplots)
 source('heatmap.3.R')
-png(paste0('heatmap',thresh,'.png'), width = 2000, height = 600)
 heatmap.3(x = rest, Rowv = FALSE, Colv = FALSE, dendrogram = "none", cellnote = res, notecol = "black",
 cexRow = 2.5, cexCol = 3, col = bluered,key.title = NA, key.ylab = NA, key.xlab = 'CirBAS', keysize = 1.1, key.par = list(cex.lab=2.1, cex.axis=2.2, mar = c(3,4,3,3)),
 notecex = 3.5,trace = "none", key = TRUE, margins = c(5, 12))
-dev.off()
 
 
 

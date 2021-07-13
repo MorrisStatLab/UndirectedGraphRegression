@@ -1,7 +1,8 @@
+##########################################################################################################################
+# Nonparametric Finite Mixture of Gaussian Graphical Models #
+##########################################################################################################################
 id = commandArgs(trailingOnly = T)
 id = as.character(id[1])
-load(paste0('all',id,'.rda'))
-rm(list=setdiff(ls(), c("id","omega.mat")))
 load(paste0('sim',id,'.rda'))
 load(paste0('icl',id,'.rda'))
 # lambdav; bandwidthv
@@ -12,10 +13,26 @@ lam = c()
 nG = dim(yy)[2]
 auc1l = c(); auc2l = c();
 ##########################################################################
-source('roc.R')
-#############################################################
-# Nonparametric Finite Mixture of Gaussian Graphical Models #
-#############################################################
+EAUC <- function(Sens, Spec){
+  phi_grid <- seq(0,1,by=.05)  # for x axis of ROC curve
+  # ROC with expected sensitivity
+  ESens <- rep(NA,length(phi_grid)-1)
+  for (phi in 2:length(phi_grid)){
+    temp <- which((c(1-Spec) >= phi_grid[phi-1]) & (c(1-Spec) < phi_grid[phi]))
+    ESens[phi-1] <- mean(Sens[temp])
+  }
+  # interpolate if missing ESens value
+  if (is.na(ESens[length(ESens)])) ESens[length(ESens)] <- 1  # if missing boundary
+  for (ind in which(is.na(ESens))) {
+    low <- rev( which(!is.na(ESens[1:ind])) )[1]  # closest index that's not NaN
+    high <- (which(!is.na(ESens[(ind+1):length(ESens)]))+ind)[1] # same thing
+    slope <- (ESens[high] - ESens[low])/(phi_grid[high]+0.025 - (phi_grid[low]+0.025))
+    int <- ESens[high] - slope*(phi_grid[high]+0.025)
+    ESens[ind] <- slope*(phi_grid[ind]+0.025) + int   #replace NaN with interpolated value
+  }
+  # Calcuate "Expected AUC"
+  return(0.05*sum(ESens))
+}
 # Required packages
 library(mclust)
 library(mvtnorm)
@@ -50,7 +67,6 @@ sum.log.like <- function(X, z, u, est.mu, est.covariance, est.pi){
       log.like.value = log.like(X[i, ], inpl.mu, inpl.cov, inpl.pi)
     }
       sum.log.like.value = sum.log.like.value + log.like.value
-      print(log.like.value)  
   }
     return(sum.log.like.value)
 }
@@ -135,7 +151,6 @@ NFMGGM <- function(X, z, u, K, h, rho, niter, toll){
   covariance.f[,,1,] <- summary(Mclust(X[z==0,], G=K))$variance
   Xi <- X[z!=0, ]
   for(i in 2:nu){
-    print(((i-2)*gn+1):((i-1)*gn))
     pi.f[,i] <- summary(Mclust(Xi[((i-2)*gn+1):((i-1)*gn),], G=K))$pro
     covariance.f[,,i,] <- summary(Mclust(Xi[((i-2)*gn+1):((i-1)*gn),], G=K))$variance
   }
@@ -215,12 +230,11 @@ rownames(lSpec2) <- paste("l1",lambdav,sep='')
 colnames(lSpec2) <- paste("l2",bandwidthv,sep='')
 ##################Prepare Input#######################
 z = as.numeric(xx[,2])
-###################################################################################
 for(m in 1:length(lambdav)){
   for(n in 1:length(bandwidthv)){
+    print(c(m,n))
     lambda = lambdav[m] 
     bandwidth = bandwidthv[n] 
-    start_time <- Sys.time()
     result = try(NFMGGM(X = yy, z = z, u = (0:10)/10, K = 1, h = bandwidth, rho = lambda, niter = 20, toll = 1e-04))
     if(inherits(result, "try-error")) next
     bicvl = BIC_score(X = yy, z=z, u = (0:10)/10, K = 1, h = bandwidth, est.pi = result$est.pi, est.covariance = result$est.covariance, est.precision = result$est.precision)
@@ -241,7 +255,6 @@ for(m in 1:length(lambdav)){
   l1 = l.heatmapR[,1]; l2 = l.heatmapR[,2] 
   lSens1[m, n] = TPR(l1, icl[[1]]); lSpec1[m, n] = 1 - FPR(l1, icl[[1]])
   lSens2[m, n] = TPR(l2, icl[[2]]); lSpec2[m, n] = 1 - FPR(l2, icl[[2]])
-  end_time <- Sys.time()
   }
 }
   

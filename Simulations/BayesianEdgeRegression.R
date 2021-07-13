@@ -1,15 +1,29 @@
 library('MASS')
 library('GIGrvg')
-##load data from sim_mgg rda
+##load data 
 run.id = commandArgs(trailingOnly = T)
 run.id = as.numeric(run.id[1])
 load(paste0('sim', run.id,'.rda'))
 x = as.numeric(xx[,2])
 ##############################################
 # a function to generate Mm
-source('M.R')
+library(MASS)
+Mout <- function(yy, x){
+	p = ncol(yy)
+    #x is the tumor purity vector for yy
+	yy.tumor <- yy[which(x >= 0.5), ]
+	yy.normal <- yy[which(x < 0.5), ]
+    # then we calculate the MLE for the precision matrix 
+	n.t = nrow(yy.tumor)
+	n.n = nrow(yy.normal)
+	prec.tumor <- (solve(cov(yy.tumor)*(n.t - 1)/n.t))^2
+	prec.normal <- (solve(cov(yy.normal)*(n.n - 1)/n.n))^2
+	M.t <- (sum(sum(prec.tumor)) - sum(diag(prec.tumor)))/2
+	M.n <- (sum(sum(prec.normal)) - sum(diag(prec.normal)))/2
+	M <- c(M.n, M.t)/(p*(p-1)/2)
+	return(M)
+}
 Mm <- Mout(yy, x)
-print(Mm)
 ############prepare and intialize##############
 nG = ncol(yy); N = nrow(yy); nX = ncol(xx)
 accept_iter <- rep(0, nX)
@@ -26,7 +40,8 @@ sigmaII = rep(1, nG)
 psiIJ = matrix(0.25, nrow = nX, ncol = nG*(nG - 1)/2)
 lambdam = rep(1, nX)
 #tune parameter
-sigma.lambda = c(0.2, 0.25)  
+sigma.lambda = c(0.2, 0.25) ## sigma.lamba is selected to make the acceptance ratio between 20% and 30%
+
 gammaSqrm = 0.5
 niteration = 20000 
 ##finish initialize
@@ -63,9 +78,7 @@ for(i in 1:(nG-1)){
 #gibbs sampler from normal
 		h = idsigmaIJ[i, j]
 	  psiIJm = solve(diag(psiIJ[,h])) ## m*m matrix
-#calculate S1: which is a n*n matrix
 		S1 = diag(((yy[,j]^2)/sigmaII[i] + (yy[,i]^2)/sigmaII[j]))
-#calculate S2: which is a n*n matrix
 		idi = idsigmaIJ[i, -c(i,j)]
 		idj = idsigmaIJ[j, -c(i,j)]
 		S2 = 2*yy[,i]*yy[,j]
@@ -77,20 +90,17 @@ for(i in 1:(nG-1)){
 	  S2 = as.matrix(S2)
 		Normal.var <- solve(psiIJm + t(xx)%*%S1%*%(xx))
 		Normal.mu <- -Normal.var%*%t(xx)%*%S2
-#sample
 		sigmaIJ[,h] <- mvrnorm(n = 1, mu = Normal.mu, Sigma = Normal.var) #
 	}
 }
 
 #############################update sigmaII for each partial correlation
-print('GIG sigmaII')
 gig1.lambda = N/2 + 1
 for(i in 1:nG){
 	gig1.psi = sum(yy[,i]^2)
 	idg = idsigmaIJ[i,-i]
     gig1.chi = sum(diag(xx%*%sigmaIJ[,idg]%*%t(yy[,-i]))^2)
 	sigmaII[i] <- rgig(1, chi = gig1.chi, lambda = gig1.lambda, psi = gig1.psi)
-	print(c(gig1.lambda, gig1.psi, gig1.chi))
 }
 			
 	
@@ -106,7 +116,6 @@ if(lln > 0){
 		}
 }	
 #############################update psiIJ for all sigmaIJ local shrinkage parameter
-print('GIG psiIJ')
 for(m in 1:nX){
 	gig2.lambda = lambdam[m] - 1/2
     gig2.psi = 1/gammaSqrm
@@ -114,7 +123,6 @@ for(m in 1:nX){
 	  for(j in (i+1):nG){
 	      h = idsigmaIJ[i, j]
           gig2.chi = sigmaIJ[m,h]^2
-#print(c(gig2.chi, gig2.lambda));
           temp = rgig(1, chi = gig2.chi, lambda = gig2.lambda, psi = gig2.psi)
           ### check precision for psi generated from gig
           if(temp < .Machine$double.eps ^ 0.5) temp = (.Machine$double.eps ^ 0.5)*2

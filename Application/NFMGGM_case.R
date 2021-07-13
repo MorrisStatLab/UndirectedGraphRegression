@@ -1,26 +1,22 @@
 ##load Pathway data
-load('../Path.rda')
-##the 8th is an union of immune, growth hormone, and angiogenesis 
-##pathways plus alpha fetaprotein (AFP)
-gene.id <- path[[6]]
-##load profile data for 305 proteins with 967 samples
+## immune, growth hormone, and angiogenesis pathways plus alpha fetaprotein (AFP)
+load('Pathway.rda')
 load('Hcc.profile.rda')
-##load estimated CirBAS for all the samples
-load('Proportion.rda')
+load('HepatoScore.rda')
 yy = t(hcc.pro[gene.id, ])
-xx = cbind(1 - prop, prop)
+xx = cbind(1 - score, score)
 x = as.numeric(xx[,2])
 # lambdav; bandwidthv
+#######################################################################################################################################
+# Nonparametric Finite Mixture of Gaussian Graphical Models #
+#######################################################################################################################################
 lambdav = seq(0.01, 2.01, length.out = 101)
 bandwidthv = seq(0.01, 2.01, length.out =101)
 bicl = c()
 lam = c()
 nG = dim(yy)[2]
 auc1l = c(); auc2l = c();
-##########################################################################
-#############################################################
-# Nonparametric Finite Mixture of Gaussian Graphical Models #
-#############################################################
+
 # Required packages
 library(mclust)
 library(mvtnorm)
@@ -189,7 +185,6 @@ NFMGGM <- function(X, z, u, K, h, rho, niter, toll){
 }
 ##################Prepare Input#######################
 z = as.numeric(xx[,2])
-###################################################################################
 for(m in 1:length(lambdav)){
   for(n in 1:length(bandwidthv)){
     lambda = lambdav[m] 

@@ -1,11 +1,7 @@
 args = commandArgs(trailingOnly = T)
 library('coda')
 library(xtable)
-load('path.rda')
-pathu = path[[6]]
-path1 = path[[1]];
-path3 = path[[3]];
-path5 = path[[4]]; ##immune to replace Immune
+load('Pathway.rda')
 
 id1 = which((pathu %in% path1) & !(pathu %in% path3) & !(pathu %in% path5))
 id3 = which((pathu %in% path3) & !(pathu %in% path1) & !(pathu %in% path5))
@@ -14,33 +10,23 @@ id13 = which((pathu %in% path1) & (pathu %in% path3))
 id35 = which((pathu %in% path3) & (pathu %in% path5))
 
 load('postm.rda')
-nG = ncol(sigmaII) ## protein number
-##load the data from result
+nG = ncol(sigmaII) 
 lc <<- 1000
 typeIerr = 0.1
-#threshold
-sl2 = c(0.1,0.15,0.2,0.25,0.3) #this order is switched just from this version
+sl2 = c(0.1,0.15,0.2,0.25,0.3) 
 thresh <<- sl2[as.numeric(as.character(args[1]))]
-#function for local fdr
-#ss=1
-#thresh <<- sl2[ss]
-lfdrf <- function(x) return(sum(abs(x) <= thresh)/lc) #just calculate the probability that below thresh
-##set up a matrix to store everything
-rhomn <- matrix(0, ncol = (nG-1)*nG/2, nrow = 5) #m; n; graph1, graph2, graph3, graph4 plut two columns for index of edge; store probability of rhomn
-pr.heatmapR <- matrix(0, nrow = (nG-1)*nG/2, ncol = 3) #posterior mean of four graphs
-#set the differential
-#####first calculate the rho of edge from sigmaij
+
+lfdrf <- function(x) return(sum(abs(x) <= thresh)/lc) 
+rhomn <- matrix(0, ncol = (nG-1)*nG/2, nrow = 5) 
+pr.heatmapR <- matrix(0, nrow = (nG-1)*nG/2, ncol = 3) 
 sigmaij = list()
 sigmaij[[1]] = sigmaIJN; sigmaij[[2]] = sigmaIJT
 ncount = 0
-##############################################
 for(m in 1:(nG-1)){
   for(n in (m+1):nG){
     rho.edge = list()
     ncount = ncount + 1
-    ###calculate the rho
     rhomn[1, ncount] = m; rhomn[2, ncount] = n 
-    ###calculate the rho.edge
     for(i in 1:2) {
       tmp.mat = sigmaij[[i]]
       tmp = as.numeric(tmp.mat[, ncount])
@@ -58,7 +44,6 @@ for(m in 1:(nG-1)){
     pr.heatmapR[ncount, 3] = mean(rho.edge[[3]])
     }
 }
-########Global FDR to select edges kept for graph
 for(i in 1:3){
   lfdr <- rhomn[i+2, ]
   lfdr.s <- sort(lfdr, decreasing = F)
@@ -86,9 +71,7 @@ ngn = row.names(heatmapR)[which(heatmapR[,1] != 0)] #normal
 tgn = row.names(heatmapR)[which(heatmapR[,2] != 0)] #tumor
 hgn = row.names(heatmapR)[which(heatmapR[,3] != 0)] #half
 
-##we define id1,id3,id5 each for 1st,2nd and 3rd class
-## GH, Angiogenesis, Immune
-#normal
+
 ccn = matrix(0, nrow = 3, ncol = 3)
 for(i in 1:length(ngn)){
   tmp = ngn[i]

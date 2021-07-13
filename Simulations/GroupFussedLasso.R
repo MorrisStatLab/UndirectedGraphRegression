@@ -1,5 +1,24 @@
 library(JGL)
-source('roc.R')
+EAUC <- function(Sens, Spec){
+  phi_grid <- seq(0,1,by=.05)  # for x axis of ROC curve
+  # ROC with expected sensitivity
+  ESens <- rep(NA,length(phi_grid)-1)
+  for (phi in 2:length(phi_grid)){
+    temp <- which((c(1-Spec) >= phi_grid[phi-1]) & (c(1-Spec) < phi_grid[phi]))
+    ESens[phi-1] <- mean(Sens[temp])
+  }
+  # interpolate if missing ESens value
+  if (is.na(ESens[length(ESens)])) ESens[length(ESens)] <- 1  # if missing boundary
+  for (ind in which(is.na(ESens))) {
+    low <- rev( which(!is.na(ESens[1:ind])) )[1]  # closest index that's not NaN
+    high <- (which(!is.na(ESens[(ind+1):length(ESens)]))+ind)[1] # same thing
+    slope <- (ESens[high] - ESens[low])/(phi_grid[high]+0.025 - (phi_grid[low]+0.025))
+    int <- ESens[high] - slope*(phi_grid[high]+0.025)
+    ESens[ind] <- slope*(phi_grid[ind]+0.025) + int   #replace NaN with interpolated value
+  }
+  # Calcuate "Expected AUC"
+  return(0.05*sum(ESens))
+}
 #######a function to calculate the approximate AIC of fgl objects
 jaic <- function(fglo, yy){
   K = length(yy)
@@ -33,26 +52,27 @@ id = commandArgs(trailingOnly = T)
 id = as.character(id[1])
 load(paste0('sim',id,'.rda'))
 load(paste0('icl',id,'.rda'))
-y1 = yy[xx[,2] == 0,]; y2 = yy[xx[,2] > 0,]
+y1 = scale(yn, center=T, scale=T)
+y2 = scale(ye, center=T, scale=T)
 # lambda1v; lambda2v
+nG = 20
 lambda1v = seq(0.01, 2.01, length.out = 101)
 lambda2v = seq(0.01, 2.01, length.out = 101)
 aicf = c(); aicg = c()
 lam = c()
-nG = 20
 auc1f = c(); auc2f = c();
 auc1g = c(); auc2g = c();
 ###################define fSensitivity and fSpecificity matrix######################
 #fused
 #1
-fSens1 <- matrix(NA,nrow=length(lambda1v),ncol=length(lambda2v)) #fSensitivity matrix 
+fSens1 <- matrix(NA,nrow=length(lambda1v),ncol=length(lambda2v)) 
 rownames(fSens1) <- paste("l1",lambda1v,sep='')
 colnames(fSens1) <- paste("l2",lambda2v,sep='')
 fSpec1 <- matrix(NA,nrow=length(lambda1v),ncol=length(lambda2v))
 rownames(fSpec1) <- paste("l1",lambda1v,sep='')
 colnames(fSpec1) <- paste("l2",lambda2v,sep='')
 #2
-fSens2 <- matrix(NA,nrow=length(lambda1v),ncol=length(lambda2v)) #fSensitivity matrix 
+fSens2 <- matrix(NA,nrow=length(lambda1v),ncol=length(lambda2v)) 
 rownames(fSens2) <- paste("l1",lambda1v,sep='')
 colnames(fSens2) <- paste("l2",lambda2v,sep='')
 fSpec2 <- matrix(NA,nrow=length(lambda1v),ncol=length(lambda2v))
@@ -63,14 +83,14 @@ colnames(fSpec2) <- paste("l2",lambda2v,sep='')
 ###################define gSensitivity and gSpecificity matrix######################
 #
 #1
-gSens1 <- matrix(NA,nrow=length(lambda1v),ncol=length(lambda2v)) #gSensitivity matrix 
+gSens1 <- matrix(NA,nrow=length(lambda1v),ncol=length(lambda2v))  
 rownames(gSens1) <- paste("l1",lambda1v,sep='')
 colnames(gSens1) <- paste("l2",lambda2v,sep='')
 gSpec1 <- matrix(NA,nrow=length(lambda1v),ncol=length(lambda2v))
 rownames(gSpec1) <- paste("l1",lambda1v,sep='')
 colnames(gSpec1) <- paste("l2",lambda2v,sep='')
 #2
-gSens2 <- matrix(NA,nrow=length(lambda1v),ncol=length(lambda2v)) #gSensitivity matrix 
+gSens2 <- matrix(NA,nrow=length(lambda1v),ncol=length(lambda2v)) 
 rownames(gSens2) <- paste("l1",lambda1v,sep='')
 colnames(gSens2) <- paste("l2",lambda2v,sep='')
 gSpec2 <- matrix(NA,nrow=length(lambda1v),ncol=length(lambda2v))
@@ -90,7 +110,6 @@ for(n in 1:length(lambda2v)){
     aicf = c(aicf, aicvf)
     aicg = c(aicg, aicvg)
     lam = rbind(lam, c(lambda1, lambda2))
-  ##############evaluate auc by fixing similarity parameter##############
   fc1 = fglff$theta[[1]]; fc2 = fglff$theta[[2]]
   gc1 = fglfg$theta[[1]]; gc2 = fglfg$theta[[2]]
   f.heatmapR = matrix(0, ncol = 2, nrow = nG*(nG - 1)/2)
